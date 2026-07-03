@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-heading: var(--font-inter-tight);
+  --font-body: var(--font-google-sans-flex);
+}
+
+html,
+body {
+  background: #ffffff;
+}
+
+body {
+  font-family: var(--font-google-sans-flex), system-ui, sans-serif;
+}
