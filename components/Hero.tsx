@@ -43,10 +43,18 @@ function Badge({
   );
 }
 
+/* How many dash-pattern lengths the flow travels per loop. The dash pattern
+   is "2 2" (4px period), so any multiple of 4 loops back with no visible
+   seam. */
+const FLOW_TRAVEL = 400;
+
 export default function Hero() {
   const mainRef = useRef<HTMLDivElement>(null);
   const stageWrapRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
+  const spotlightRef = useRef<HTMLDivElement>(null);
+  const flowTweensRef = useRef<gsap.core.Tween[]>([]);
+  const hubGlowTlRef = useRef<gsap.core.Timeline | null>(null);
 
   useGSAP(
     () => {
@@ -135,10 +143,67 @@ export default function Hero() {
         delay: 2,
       });
 
-      return () => window.removeEventListener("resize", fit);
+      /* Continuous "data flowing into the hub" loop: each dashed connector
+         perpetually crawls in the direction its arrowhead points, forever,
+         not just on hover. Direction is precomputed per connector in
+         hero-data.ts (see the `flow` field) since it depends on whether the
+         path was authored icon→hub or hub→icon. */
+      flowTweensRef.current = gsap.utils
+        .toArray<SVGPathElement>(".hero-line")
+        .map((path) => {
+          const reverse = path.dataset.flow === "reverse";
+          return gsap.to(path, {
+            strokeDashoffset: reverse ? FLOW_TRAVEL : -FLOW_TRAVEL,
+            duration: 6,
+            ease: "none",
+            repeat: -1,
+          });
+        });
+
+      /* Radar-style pulse ring around the hub, played only while hovering. */
+      hubGlowTlRef.current = gsap
+        .timeline({ paused: true, repeat: -1 })
+        .fromTo(
+          ".hero-hub-glow",
+          { scale: 0.85, opacity: 0.55 },
+          { scale: 1.45, opacity: 0, duration: 1.4, ease: "power1.out" }
+        );
+
+      return () => {
+        window.removeEventListener("resize", fit);
+        flowTweensRef.current.forEach((t) => t.kill());
+        hubGlowTlRef.current?.kill();
+      };
     },
     { scope: mainRef }
   );
+
+  /* Hover interaction on the diagram background: speed up the data flow,
+     nudge the hub, play the pulse ring, and fade in a cursor-following
+     spotlight glow across the card. */
+  const handleEnter = () => {
+    gsap.to(flowTweensRef.current, { timeScale: 2.6, duration: 0.6, ease: "power2.out" });
+    gsap.to(".hero-hub", { scale: 1.06, duration: 0.5, ease: "back.out(2)" });
+    gsap.to(spotlightRef.current, { opacity: 1, duration: 0.5 });
+    hubGlowTlRef.current?.play(0);
+  };
+
+  const handleLeave = () => {
+    gsap.to(flowTweensRef.current, { timeScale: 1, duration: 0.6, ease: "power2.out" });
+    gsap.to(".hero-hub", { scale: 1, duration: 0.5, ease: "power2.out" });
+    gsap.to(spotlightRef.current, { opacity: 0, duration: 0.5 });
+    hubGlowTlRef.current?.pause(0);
+  };
+
+  const handleMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    if (spotlightRef.current) {
+      spotlightRef.current.style.setProperty("--mx", `${x}%`);
+      spotlightRef.current.style.setProperty("--my", `${y}%`);
+    }
+  };
 
   return (
     <main ref={mainRef} className="w-full bg-white">
@@ -174,6 +239,9 @@ export default function Hero() {
       {/* ---- Decorative diagram: fixed 1280x832 scene scaled to fit. ---- */}
       <div
         ref={stageWrapRef}
+        onMouseEnter={handleEnter}
+        onMouseLeave={handleLeave}
+        onMouseMove={handleMove}
         className="relative mt-6 w-full overflow-hidden sm:mt-8"
       >
         <div
@@ -214,6 +282,28 @@ export default function Hero() {
             style={{ width: STAGE_W, height: STAGE_H }}
           />
 
+          {/* Cursor-following spotlight, only visible while hovering */}
+          <div
+            ref={spotlightRef}
+            className="pointer-events-none absolute inset-0 opacity-0"
+            style={{
+              background:
+                "radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(16,185,129,0.16), transparent 42%)",
+            }}
+          />
+
+          {/* Hub pulse ring, played on hover */}
+          <div
+            className="hero-hub-glow pointer-events-none absolute rounded-[28px] opacity-0"
+            style={{
+              left: 557,
+              top: 367,
+              width: 164,
+              height: 169,
+              boxShadow: "0 0 0 2px rgba(16,185,129,0.55)",
+            }}
+          />
+
           {/* Dashed connectors */}
           <svg
             className="pointer-events-none absolute inset-0"
@@ -243,6 +333,7 @@ export default function Hero() {
               <g key={c.name}>
                 <path
                   className="hero-line"
+                  data-flow={c.flow}
                   d={c.d}
                   stroke={`url(#grad-${c.name})`}
                   strokeWidth={2}

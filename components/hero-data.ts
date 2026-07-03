@@ -47,12 +47,19 @@ export type Connector = {
   dot: { cx: number; cy: number; fill: string };
   arrow: { d: string; fill: string; dx?: number; dy?: number };
   gradient: { x1: number; y1: number; x2: number; y2: number; stops: Stop[] };
+  /* Direction data should appear to flow along the path, from the app-icon
+     dot toward the hub-side arrowhead. "forward" = path is authored
+     icon→hub (dashoffset should decrease over time). "reverse" = path is
+     authored hub→icon, so the flow has to run against the path's own
+     start-to-end order (dashoffset increases over time). */
+  flow: "forward" | "reverse";
 };
 
 /* Dashed connectors: exact paths, gradients, dots and arrowheads from Figma */
 export const CONNECTORS: Connector[] = [
   {
     name: "design",
+    flow: "forward",
     d: "M548 225H581C596.464 225 609 237.536 609 253V354",
     dot: { cx: 553, cy: 225, fill: "#F24E1E" },
     arrow: { d: ARROW_DOWN, fill: "#A259FF" },
@@ -66,6 +73,7 @@ export const CONNECTORS: Connector[] = [
   },
   {
     name: "schedule",
+    flow: "forward",
     d: "M668 354V253C668 237.536 680.536 225 696 225H729",
     dot: { cx: 724, cy: 225, fill: "#ECB22E" },
     arrow: { d: ARROW_DOWN, fill: "#36C5F0", dx: 59 },
@@ -79,6 +87,7 @@ export const CONNECTORS: Connector[] = [
   },
   {
     name: "explore",
+    flow: "reverse",
     d: "M538 428H506.708C491.244 428 478.708 415.464 478.708 400V391C478.708 375.536 466.172 363 450.708 363H408",
     dot: { cx: 405, cy: 363, fill: "#8E36C6" },
     arrow: { d: ARROW_RIGHT, fill: "#FFCD52" },
@@ -93,6 +102,7 @@ export const CONNECTORS: Connector[] = [
   },
   {
     name: "quote",
+    flow: "reverse",
     d: "M538 471H506.708C491.244 471 478.708 483.536 478.708 499V508C478.708 523.464 466.172 536 450.708 536H408",
     dot: { cx: 405, cy: 536, fill: "#3D3D3D" },
     arrow: { d: ARROW_RIGHT, fill: "#3D3D3D", dy: 43 },
@@ -107,6 +117,7 @@ export const CONNECTORS: Connector[] = [
   },
   {
     name: "premiere",
+    flow: "reverse",
     d: "M740 428H771.292C786.756 428 799.292 415.464 799.292 400V391C799.292 375.536 811.828 363 827.292 363H870",
     dot: { cx: 871, cy: 363, fill: "#FF0000" },
     arrow: { d: ARROW_LEFT, fill: "#FF0000" },
@@ -121,6 +132,7 @@ export const CONNECTORS: Connector[] = [
   },
   {
     name: "summarize",
+    flow: "reverse",
     d: "M740 470H771.292C786.756 470 799.292 482.536 799.292 498V507C799.292 522.464 811.828 535 827.292 535H870",
     dot: { cx: 871, cy: 535, fill: "#FF7043" },
     arrow: { d: ARROW_LEFT, fill: "#FF7043", dy: 42 },
@@ -135,6 +147,7 @@ export const CONNECTORS: Connector[] = [
   },
   {
     name: "boost",
+    flow: "forward",
     d: "M545 708H579C594.464 708 607 695.464 607 680V546",
     dot: { cx: 542, cy: 708, fill: "#77AEF5" },
     arrow: { d: ARROW_UP, fill: "#77AEF5" },
@@ -149,6 +162,7 @@ export const CONNECTORS: Connector[] = [
   },
   {
     name: "broadcast",
+    flow: "forward",
     d: "M729 708H695C679.536 708 667 695.464 667 680V546",
     dot: { cx: 732, cy: 708, fill: "#84D38A" },
     arrow: { d: ARROW_UP, fill: "#84D38A", dx: 60 },
