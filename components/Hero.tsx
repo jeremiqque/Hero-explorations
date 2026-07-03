@@ -52,7 +52,6 @@ export default function Hero() {
   const mainRef = useRef<HTMLDivElement>(null);
   const stageWrapRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
-  const spotlightRef = useRef<HTMLDivElement>(null);
   const flowTweensRef = useRef<gsap.core.Tween[]>([]);
   const hubGlowTlRef = useRef<gsap.core.Timeline | null>(null);
 
@@ -179,30 +178,17 @@ export default function Hero() {
   );
 
   /* Hover interaction on the diagram background: speed up the data flow,
-     nudge the hub, play the pulse ring, and fade in a cursor-following
-     spotlight glow across the card. */
+     nudge the hub, and play the pulse ring. */
   const handleEnter = () => {
     gsap.to(flowTweensRef.current, { timeScale: 2.6, duration: 0.6, ease: "power2.out" });
     gsap.to(".hero-hub", { scale: 1.06, duration: 0.5, ease: "back.out(2)" });
-    gsap.to(spotlightRef.current, { opacity: 1, duration: 0.5 });
     hubGlowTlRef.current?.play(0);
   };
 
   const handleLeave = () => {
     gsap.to(flowTweensRef.current, { timeScale: 1, duration: 0.6, ease: "power2.out" });
     gsap.to(".hero-hub", { scale: 1, duration: 0.5, ease: "power2.out" });
-    gsap.to(spotlightRef.current, { opacity: 0, duration: 0.5 });
     hubGlowTlRef.current?.pause(0);
-  };
-
-  const handleMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    if (spotlightRef.current) {
-      spotlightRef.current.style.setProperty("--mx", `${x}%`);
-      spotlightRef.current.style.setProperty("--my", `${y}%`);
-    }
   };
 
   return (
@@ -241,7 +227,6 @@ export default function Hero() {
         ref={stageWrapRef}
         onMouseEnter={handleEnter}
         onMouseLeave={handleLeave}
-        onMouseMove={handleMove}
         className="relative mt-6 w-full overflow-hidden sm:mt-8"
       >
         <div
@@ -280,16 +265,6 @@ export default function Hero() {
             alt=""
             className="hero-card pointer-events-none absolute inset-0"
             style={{ width: STAGE_W, height: STAGE_H }}
-          />
-
-          {/* Cursor-following spotlight, only visible while hovering */}
-          <div
-            ref={spotlightRef}
-            className="pointer-events-none absolute inset-0 opacity-0"
-            style={{
-              background:
-                "radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(16,185,129,0.16), transparent 42%)",
-            }}
           />
 
           {/* Hub pulse ring, played on hover */}
